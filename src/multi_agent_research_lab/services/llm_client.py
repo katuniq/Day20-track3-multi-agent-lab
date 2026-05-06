@@ -4,9 +4,9 @@ Production note: agents should depend on this interface instead of importing an 
 """
 
 from dataclasses import dataclass
-import os
 from openai import OpenAI
 
+from multi_agent_research_lab.core.config import get_settings
 from multi_agent_research_lab.core.errors import StudentTodoError
 
 
@@ -21,9 +21,10 @@ class LLMResponse:
 class LLMClient:
     """Provider-agnostic LLM client skeleton."""
 
-    def __init__(self, model: str = "gpt-4o-mini", api_key: str | None = None):
-        api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        self.model = model
+    def __init__(self, model: str | None = None, api_key: str | None = None):
+        settings = get_settings()
+        api_key = api_key or settings.openai_api_key
+        self.model = model or settings.openai_model
         self.client = OpenAI(api_key=api_key)
 
     def complete(self, system_prompt: str, user_prompt: str) -> LLMResponse:

@@ -1,10 +1,9 @@
 """Search client abstraction for ResearcherAgent."""
 
-import os
 import json
 import urllib.request
-from typing import Any
 
+from multi_agent_research_lab.core.config import get_settings
 from multi_agent_research_lab.core.errors import StudentTodoError
 from multi_agent_research_lab.core.schemas import SourceDocument
 
@@ -13,7 +12,8 @@ class SearchClient:
     """Provider-agnostic search client skeleton."""
 
     def __init__(self, api_key: str | None = None):
-        self.api_key = api_key or os.environ.get("TAVILY_API_KEY")
+        settings = get_settings()
+        self.api_key = api_key or settings.tavily_api_key
 
     def search(self, query: str, max_results: int = 5) -> list[SourceDocument]:
         """Search for documents relevant to a query."""
