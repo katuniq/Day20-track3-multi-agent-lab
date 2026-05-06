@@ -16,12 +16,22 @@ class MultiAgentWorkflow:
         """Create a LangGraph graph."""
         graph = StateGraph(ResearchState)
         
+        # Wrap node functions with trace_span
+        def run_agent(agent_name: str, agent_obj):
+            def _wrapped(state: ResearchState) -> ResearchState:
+                from multi_agent_research_lab.observability.tracing import trace_span
+                with trace_span(agent_name, {"iteration": state.iteration}) as span:
+                    new_state = agent_obj.run(state)
+                    new_state.add_trace_event(agent_name, span)
+                    return new_state
+            return _wrapped
+
         # Add nodes
-        graph.add_node("supervisor", SupervisorAgent().run)
-        graph.add_node("researcher", ResearcherAgent().run)
-        graph.add_node("analyst", AnalystAgent().run)
-        graph.add_node("writer", WriterAgent().run)
-        graph.add_node("critic", CriticAgent().run)
+        graph.add_node("supervisor", run_agent("supervisor", SupervisorAgent()))
+        graph.add_node("researcher", run_agent("researcher", ResearcherAgent()))
+        graph.add_node("analyst", run_agent("analyst", AnalystAgent()))
+        graph.add_node("writer", run_agent("writer", WriterAgent()))
+        graph.add_node("critic", run_agent("critic", CriticAgent()))
         
         # Add edges
         graph.set_entry_point("supervisor")

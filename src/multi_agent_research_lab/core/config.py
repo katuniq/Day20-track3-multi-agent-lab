@@ -5,8 +5,12 @@ Keep config small and explicit. Do not read environment variables directly in ag
 
 from functools import lru_cache
 
+from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Load .env into os.environ for external SDKs (LangSmith, OpenAI)
+load_dotenv()
 
 
 class Settings(BaseSettings):
