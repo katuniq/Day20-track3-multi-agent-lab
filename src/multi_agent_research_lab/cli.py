@@ -31,12 +31,18 @@ def baseline(
     _init()
     request = ResearchQuery(query=query)
     state = ResearchState(request=request)
-    state.final_answer = (
-        "Baseline skeleton response. TODO(student): replace this with a real single-agent "
-        "implementation and record latency/cost/quality metrics."
+    
+    from multi_agent_research_lab.services.llm_client import LLMClient
+    llm = LLMClient()
+    response = llm.complete(
+        system_prompt="You are a helpful research assistant. Answer the user's query comprehensively.",
+        user_prompt=query
     )
+    
+    state.final_answer = response.content
+    state.add_trace_event("baseline_complete", {"input_tokens": response.input_tokens, "output_tokens": response.output_tokens})
+    
     console.print(Panel.fit(state.final_answer, title="Single-Agent Baseline"))
-
 
 @app.command("multi-agent")
 def multi_agent(

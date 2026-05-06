@@ -1,28 +1,58 @@
 """LangGraph workflow skeleton."""
 
-from multi_agent_research_lab.core.errors import StudentTodoError
+from langgraph.graph import StateGraph, END
 from multi_agent_research_lab.core.state import ResearchState
+from multi_agent_research_lab.agents.supervisor import SupervisorAgent
+from multi_agent_research_lab.agents.researcher import ResearcherAgent
+from multi_agent_research_lab.agents.analyst import AnalystAgent
+from multi_agent_research_lab.agents.writer import WriterAgent
+from multi_agent_research_lab.agents.critic import CriticAgent
 
 
 class MultiAgentWorkflow:
-    """Builds and runs the multi-agent graph.
-
-    Keep orchestration here; keep agent internals in `agents/`.
-    """
+    """Builds and runs the multi-agent graph."""
 
     def build(self) -> object:
-        """Create a LangGraph graph.
-
-        TODO(student): Implement nodes, edges, conditional routing, and stop condition.
-        Suggested nodes: supervisor, researcher, analyst, writer, optional critic.
-        """
-
-        raise StudentTodoError("TODO(student): implement MultiAgentWorkflow.build")
+        """Create a LangGraph graph."""
+        graph = StateGraph(ResearchState)
+        
+        # Add nodes
+        graph.add_node("supervisor", SupervisorAgent().run)
+        graph.add_node("researcher", ResearcherAgent().run)
+        graph.add_node("analyst", AnalystAgent().run)
+        graph.add_node("writer", WriterAgent().run)
+        graph.add_node("critic", CriticAgent().run)
+        
+        # Add edges
+        graph.set_entry_point("supervisor")
+        
+        # Conditional routing from supervisor
+        def route(state: ResearchState) -> str:
+            if not state.route_history:
+                return "researcher"
+            last_route = state.route_history[-1]
+            if last_route == "done":
+                return END
+            return last_route
+            
+        graph.add_conditional_edges("supervisor", route)
+        
+        # Worker agents return to supervisor
+        graph.add_edge("researcher", "supervisor")
+        graph.add_edge("analyst", "supervisor")
+        graph.add_edge("writer", "critic")
+        graph.add_edge("critic", "supervisor")
+        
+        return graph.compile()
 
     def run(self, state: ResearchState) -> ResearchState:
-        """Execute the graph and return final state.
-
-        TODO(student): Compile graph, invoke it, and convert result back to ResearchState.
-        """
-
-        raise StudentTodoError("TODO(student): implement MultiAgentWorkflow.run")
+        """Execute the graph and return final state."""
+        app = self.build()
+        result = app.invoke(state)
+        # LangGraph invoke returns a dictionary with the final state if using typed dict, but with Pydantic it might return the BaseModel or a dict.
+        # Since ResearchState is a Pydantic BaseModel, langgraph may return a dict or the model itself.
+        if isinstance(result, ResearchState):
+            return result
+        elif isinstance(result, dict):
+            return ResearchState(**result)
+        return state
