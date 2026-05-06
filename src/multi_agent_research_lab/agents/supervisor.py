@@ -11,7 +11,7 @@ class SupervisorAgent(BaseAgent):
 
     def run(self, state: ResearchState) -> ResearchState:
         """Update `state.route_history` with the next route."""
-        
+
         # Enforce max iterations
         if state.iteration >= 5:
             route = "done"
@@ -23,6 +23,6 @@ class SupervisorAgent(BaseAgent):
             route = "writer"
         else:
             route = "done"
-            
+
         state.record_route(route)
         return state

@@ -4,7 +4,6 @@ import json
 import urllib.request
 
 from multi_agent_research_lab.core.config import get_settings
-from multi_agent_research_lab.core.errors import StudentTodoError
 from multi_agent_research_lab.core.schemas import SourceDocument
 
 
@@ -24,27 +23,31 @@ class SearchClient:
                     title=f"Mock Result for {query}",
                     url="https://example.com/mock-result",
                     snippet=f"This is a mocked search result for the query: {query}. It contains simulated information.",
-                    metadata={"source": "mock"}
+                    metadata={"source": "mock"},
                 )
             ]
-            
+
         try:
             req = urllib.request.Request(
                 "https://api.tavily.com/search",
-                data=json.dumps({"query": query, "api_key": self.api_key, "max_results": max_results}).encode("utf-8"),
-                headers={"Content-Type": "application/json"}
+                data=json.dumps(
+                    {"query": query, "api_key": self.api_key, "max_results": max_results}
+                ).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
             )
             with urllib.request.urlopen(req) as response:
                 result = json.loads(response.read().decode("utf-8"))
-            
+
             docs = []
             for r in result.get("results", []):
-                docs.append(SourceDocument(
-                    title=r.get("title", "Untitled"),
-                    url=r.get("url", ""),
-                    snippet=r.get("content", ""),
-                    metadata={"score": r.get("score")}
-                ))
+                docs.append(
+                    SourceDocument(
+                        title=r.get("title", "Untitled"),
+                        url=r.get("url", ""),
+                        snippet=r.get("content", ""),
+                        metadata={"score": r.get("score")},
+                    )
+                )
             return docs
         except Exception as e:
             # Fallback to mock on error
@@ -53,6 +56,6 @@ class SearchClient:
                     title=f"Error Search for {query}",
                     url="https://example.com/error",
                     snippet=f"Search failed with error: {str(e)}. Mocking fallback.",
-                    metadata={"source": "mock_error"}
+                    metadata={"source": "mock_error"},
                 )
             ]
